@@ -1,30 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:connectivity/connectivity.dart';
 import 'package:to_do_app/constants/colors.dart';
+import 'package:to_do_app/sreens/fetch_users.dart';
+import 'package:to_do_app/sreens/user_details.dart';
 
-void main() {
-  runApp(Home());
-}
-
-class Home extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'User List',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
-        scaffoldBackgroundColor: Colors.grey[300],
-        textTheme: TextTheme(
-          bodyMedium: TextStyle(color: Colors.black),
-        ),
-      ),
-      home: HomePage(),
-    );
-  }
-}
+import 'net_connection.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -32,173 +11,76 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<dynamic> users = [];
-
-  @override
-  void initState() {
-    super.initState();
-    fetchUsers();
-  }
-
-  Future<void> fetchUsers() async {
-    final String apiUrl = 'https://dummyapi.io/data/v1/user?limit=20';
-    final String appId = '61dbf9b1d7efe0f95bc1e1a6';
-
-    try {
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {'app-id': appId},
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          users = json.decode(response.body)['data'];
-        });
-      } else {
-        throw Exception('Failed to load users');
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  Future<void> checkInternetAndNavigate(
-      BuildContext context, String userId) async {
-    var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('No internet connection!'),
-      ));
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => UserDetailsPage(userId: userId)),
-      );
-    }
-  }
+  List users = [
+    User(name: "Rahul", age: 20, email: "r@gmail.com"),
+    User(name: "Radha", age: 21, email: "d@gmail.com"),
+    User(name: "Krishna", age: 15, email: "k@gmail.com"),
+    User(name: "Goutham", age: 30, email: "kl@gmail.com"),
+    User(name: "Giri", age: 26, email: "l@gmail.com"),
+    User(name: "Babu", age: 13, email: "s@gmail.com"),
+    User(name: "Jayan", age: 31, email: "j@gmail.com"),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text('Users')),
+        bottom: PreferredSize(preferredSize: Size(0, 30), child: Container(decoration: BoxDecoration(color: CustomColors.luGrey, borderRadius: BorderRadius.circular(5)),child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
+          child: Text("Listed", style: TextStyle(color: CustomColors.luBlack),),
+        ),)),
+        title: Center(child: Text('Users', style: TextStyle(color: CustomColors.luGrey),)),
+        backgroundColor: CustomColors.luBlack,
       ),
       body: Container(
+        color: CustomColors.luBlack,
         padding: EdgeInsets.all(8.0),
         child: ListView.builder(
           itemCount: users.length,
           itemBuilder: (context, index) {
-            return Card(
-              elevation: 2,
-              child: ListTile(
-                title: Text(
-                  users[index]['firstName'] + ' ' + users[index]['lastName'],
-                  style: TextStyle(fontWeight: FontWeight.bold),
+            return Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    color: CustomColors.luBlue),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text(
+                      users[index].name,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18),
+                    ),
+                    subtitle: Text(
+                      users[index].email,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontStyle: FontStyle.italic,
+                          fontSize: 15),
+                    ),
+                    trailing: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        color: CustomColors.luBlack,
+                        size: 30,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => UserDetails(user: users[index])));
+                    },
+                  ),
                 ),
-                trailing: CircleAvatar(
-                  backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, color: Colors.white),
-                ),
-                onTap: () {
-                  checkInternetAndNavigate(context, users[index]['id']);
-                },
               ),
             );
           },
         ),
       ),
     );
-  }
-}
-
-class UserDetailsPage extends StatefulWidget {
-  final String userId;
-
-  UserDetailsPage({required this.userId});
-
-  @override
-  _UserDetailsPageState createState() => _UserDetailsPageState();
-}
-
-class _UserDetailsPageState extends State<UserDetailsPage> {
-  Map<String, dynamic> userDetails = {};
-
-  @override
-  void initState() {
-    super.initState();
-    fetchUserDetails();
-  }
-
-  Future<void> fetchUserDetails() async {
-    final String apiUrl = 'https://dummyapi.io/data/v1/user/${widget.userId}';
-    final String appId = '61dbf9b1d7efe0f95bc1e1a6';
-
-    try {
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {'app-id': appId},
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          userDetails = json.decode(response.body);
-        });
-      } else {
-        throw Exception('Failed to load user details');
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Text('User Details'),
-        ),
-        body: Center(
-          child: Container(
-            child: userDetails.isNotEmpty
-                ? Container(
-                    child: Container(
-                      padding: EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        border: Border.all(width: 5, color: Colors.blueGrey),
-                        color:
-                        Colors.grey[300],
-                        borderRadius: BorderRadius.circular(
-                            20.0),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.grey,
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 70,
-                            ),
-                            radius: 40,
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            'Name: ${userDetails['firstName']} ${userDetails['lastName']}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 15),
-                          Text('Email: ${userDetails['email']}'),
-                        ],
-                      ),
-                    ),
-                  )
-                : Center(
-                    child: CircularProgressIndicator(),
-                  ),
-          ),
-        ));
   }
 }
